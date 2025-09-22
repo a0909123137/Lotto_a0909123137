@@ -5,7 +5,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,13 +17,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue // 引入 setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.input.pointer.PointerInputScope
 import tw.edu.pu.csim.tcyang.lotto.ui.theme.LottoTheme
-import androidx.compose.runtime.setValue // 引入 setValue
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,24 +47,37 @@ class MainActivity : ComponentActivity() {
 fun Play(modifier: Modifier = Modifier) {
     var lucky by remember { mutableStateOf((1..100).random()) }
     var touchPosition by remember { mutableStateOf(Offset(0f, 0f)) }
-
     val context = LocalContext.current
+
+    // To show Toast message on touch
+    LaunchedEffect(touchPosition) {
+        if (touchPosition != Offset(0f, 0f)) {
+            Toast.makeText(
+                context,
+                "觸控位置: x = ${touchPosition.x}, y = ${touchPosition.y}",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .pointerInput(Unit) {
-                // 捕捉觸控事件
-                detectTapGestures { tapOffset ->
-                    // 更新觸控座標
-                    touchPosition = tapOffset
-                    // 顯示觸控座標
-                    Toast.makeText(
-                        context,
-                        "觸控位置: x = ${tapOffset.x}, y = ${tapOffset.y}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+                // Handle tap and long press gestures
+                detectTapGestures(
+                    onTap = {
+                        // Short press: decrease value by 1
+                        lucky -= 1
+                    }
+                )
+
+                detectLongPressGestures(
+                    onLongPress = {
+                        // Long press: increase value by 1
+                        lucky += 1
+                    }
+                )
             },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -78,9 +92,13 @@ fun Play(modifier: Modifier = Modifier) {
             Text("重新產生樂透碼")
         }
 
-        // 顯示觸控座標
+        // Display touch position
         Text(
             text = "觸控位置：x = ${touchPosition.x}, y = ${touchPosition.y}"
         )
     }
+}
+
+private fun PointerInputScope.detectLongPressGestures(onLongPress: () -> Unit) {
+
 }
